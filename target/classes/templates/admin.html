@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - LifeStream</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<div class="container">
+    <h1>Welcome, Admin 👨‍⚕️</h1>
+
+    <!-- ✅ Inventory Section -->
+    <section>
+        <h2>Blood Inventory</h2>
+        <button onclick="loadInventory()">🔄 Refresh Inventory</button>
+        <ul id="inventoryList"></ul>
+    </section>
+
+    <hr>
+
+    <!-- ✅ Appointments Section -->
+    <section>
+        <h2>All Appointments</h2>
+        <button onclick="loadAppointments()">🔄 Refresh Appointments</button>
+        <ul id="apptList"></ul>
+    </section>
+</div>
+
+<script>
+    // ✅ Fetch Inventory
+    async function loadInventory() {
+        try {
+            const res = await fetch("/api/inventory");
+            const data = await res.json();
+
+            const list = document.getElementById("inventoryList");
+            list.innerHTML = "";
+
+            if (data.length === 0) {
+                list.innerHTML = "<li>No inventory records available.</li>";
+            } else {
+                data.forEach(item => {
+                    const li = document.createElement("li");
+                    li.textContent = `${item.bloodType}: ${item.units} units`;
+                    list.appendChild(li);
+                });
+            }
+        } catch (err) {
+            alert("Error loading inventory: " + err.message);
+        }
+    }
+
+    // ✅ Fetch Appointments
+    async function loadAppointments() {
+        try {
+            const res = await fetch("/api/admin/appointments");
+            const data = await res.json();
+
+            const list = document.getElementById("apptList");
+            list.innerHTML = "";
+
+            if (data.length === 0) {
+                list.innerHTML = "<li>No appointments scheduled.</li>";
+            } else {
+                data.forEach(a => {
+                    const li = document.createElement("li");
+                    li.innerHTML = `${a.donorId} → ${a.appointmentTime} | Completed: ${a.completed}
+                        ${!a.completed ? `<button onclick="completeAppt('${a.id}')">Mark Complete</button>` : ""}`;
+                    list.appendChild(li);
+                });
+            }
+        } catch (err) {
+            alert("Error loading appointments: " + err.message);
+        }
+    }
+
+    // ✅ Mark Appointment as Completed
+    async function completeAppt(id) {
+        const res = await fetch(`/api/admin/appointments/${id}/complete`, {
+            method: "POST"
+        });
+        if (res.ok) {
+            alert("✅ Appointment marked completed!");
+            loadAppointments();
+        } else {
+            alert("❌ Failed to complete appointment.");
+        }
+    }
+
+    // Load data on page load
+    window.onload = () => {
+        loadInventory();
+        loadAppointments();
+    };
+</script>
+</body>
+</html>

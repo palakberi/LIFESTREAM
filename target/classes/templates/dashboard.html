@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - LifeStream</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<div class="container">
+    <h1>Welcome, <span th:text="${username}"></span></h1>
+
+    <!-- Donor Actions -->
+    <div th:if="${role} == 'DONOR'">
+        <h2>Donor Actions</h2>
+        <form id="appointmentForm">
+            <input type="hidden" id="donorId" th:value="${username}">
+            <label>Schedule Donation:</label>
+            <input type="datetime-local" id="time" required>
+            <button type="submit">Schedule</button>
+        </form>
+    </div>
+
+    <!-- Recipient Actions -->
+    <div th:if="${role} == 'RECIPIENT'">
+        <h2>Recipient Actions</h2>
+        <form id="requestForm">
+            <input type="hidden" id="recipientId" th:value="${username}">
+            <label>Request Blood:</label>
+            <input type="text" id="bloodType" placeholder="Enter Blood Type" required>
+            <button type="submit">Request</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById("requestForm")?.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const recipientId = document.getElementById("recipientId").value;
+          const bloodType = document.getElementById("bloodType").value;
+
+          const res = await fetch(`/api/recipient/request?recipientId=${recipientId}&bloodType=${bloodType}`, {
+            method: "POST"
+          });
+          const msg = await res.text();
+          alert(msg);
+          loadInventory();
+        });
+    </script>
+
+
+
+    <!-- Inventory -->
+    <h2>Check Inventory</h2>
+    <button type="button" onclick="loadInventory()">View Inventory</button>
+    <ul id="inventoryList"></ul>
+
+    <!-- Appointments -->
+    <h2>Your Appointments</h2>
+    <ul id="apptList"></ul>
+</div>
+
+<script>
+    // 📦 Load Inventory
+    async function loadInventory() {
+        try {
+            console.log("Fetching inventory...");
+            const res = await fetch("/api/inventory");
+            console.log("Response status:", res.status);
+
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            const data = await res.json();
+            console.log("Data received:", data);
+
+            const list = document.getElementById("inventoryList");
+            list.innerHTML = "";
+
+            if (data.length === 0) {
+                const li = document.createElement("li");
+                li.textContent = "⚠️ No inventory available right now.";
+                list.appendChild(li);
+            } else {
+                data.forEach(item => {
+                    const li = document.createElement("li");
+                    li.textContent = `${item.bloodType}: ${item.units} units`;
+                    list.appendChild(li);
+                });
+            }
+        } catch (err) {
+            console.error("Error:", err);
+            alert("Error loading inventory: " + err.message);
+        }
+    }
+
+    // 📅 Schedule Appointment
+    document.getElementById("appointmentForm")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const donorId = document.getElementById("donorId").value;
+        const time = document.getElementById("time").value;
+
+        try {
+            const res = await fetch(`/api/appointments/schedule?donorId=${donorId}&time=${time}`, {
+                method: "POST"
+            });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            const data = await res.json();
+            alert("Appointment scheduled: " + data.appointmentTime);
+            loadAppointments();
+        } catch (err) {
+            console.error("Error scheduling:", err);
+            alert("Failed to schedule appointment: " + err.message);
+        }
+    });
+
+    // 📋 Load Donor Appointments
+    async function loadAppointments() {
+        const donorId = document.getElementById("donorId")?.value;
+        if (!donorId) return; // only load for donors
+
+        try {
+            const res = await fetch(`/api/appointments/donor/${donorId}`);
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            const appts = await res.json();
+
+            const list = document.getElementById("apptList");
+            list.innerHTML = "";
+
+            if (appts.length === 0) {
+                const li = document.createElement("li");
+                li.textContent = "⚠️ No appointments scheduled.";
+                list.appendChild(li);
+            } else {
+                appts.forEach(a => {
+                    const li = document.createElement("li");
+                    li.textContent = `${a.appointmentTime} - Completed: ${a.completed}`;
+                    list.appendChild(li);
+                });
+            }
+        } catch (err) {
+            console.error("Error loading appointments:", err);
+        }
+    }
+</script>
+</body>
+</html>
