@@ -1,57 +1,114 @@
-# LifeStream (Spring Boot)
+# 🩸 LifeStream – Blood Donation Platform
 
-A minimal but production-style backend for a blood donation platform.
+[![Java](https://img.shields.io/badge/Java-17-blue?logo=java)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/SpringBoot-3.x-brightgreen?logo=springboot)](https://spring.io/projects/spring-boot)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Database-green?logo=mongodb)](https://www.mongodb.com/)
+[![License](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
 
-## Run locally
-
-Requirements: JDK 17+, Maven
-
-```bash
-mvn spring-boot:run
-```
-
-Open Swagger UI at: `http://localhost:8080/swagger-ui.html`
-
-H2 console: `http://localhost:8080/h2` (JDBC URL: `jdbc:h2:mem:lifestream`, user: `sa`, password: empty)
-
-## Auth (JWT)
-
-- Login: `POST /api/auth/login` with `{ "username":"donor1", "password":"password" }`
-- Use returned token as header: `Authorization: Bearer <token>`
-
-Seed users:
-- admin / admin123 (ROLE_ADMIN)
-- donor1 / password (ROLE_DONOR)
-- rec1 / password (ROLE_RECIPIENT)
-
-## Donor Flow
-
-1) Schedule a donation: `POST /api/donor/schedule`
-```json
-{ "when": "2030-12-31T10:00:00" }
-```
-2) Complete donation (admin or nurse flow can be modeled separately): `POST /api/donor/complete/{appointmentId}`
-```json
-{ "bloodType": "O_POS", "units": 1 }
-```
-
-## Recipient Flow
-
-Request units: `POST /api/recipient/request`
-```json
-{ "bloodType": "O_POS", "units": 2 }
-```
-
-## Inventory
-
-- Check availability: `GET /api/inventory/availability`
-- Adjust (admin only): `POST /api/inventory/adjust?type=O_POS&delta=2`
-
-## Concurrency / "real-time" inventory
-
-- Stock updates are executed inside a transaction with a pessimistic row lock per blood type to prevent race conditions.
-- For true realtime to clients, add WebSocket/SSE that pushes inventory updates after each adjustment (not included to keep code compact).
+**LifeStream** is a full-stack blood donation management system built with **Java Spring Boot**, **MongoDB**, and **Thymeleaf**.  
+It streamlines the process of blood donation, requests, and inventory management for **donors, recipients, and admins**.
 
 ---
 
-**Note**: Change `app.jwt.secret` in `application.yml` before deploying.
+## ✨ Features
+
+### 👤 Donors
+- Register with username, password & blood type
+- Schedule donation appointments
+- Inventory automatically updates when a donor registers
+
+### 🧍 Recipients
+- Register and request blood
+- Blood stock decreases when request is approved
+- View current inventory
+
+### 🛡️ Admin
+- Login with `admin / admin123`
+- View **all appointments**
+- Mark appointments as completed
+- Monitor and adjust **blood inventory**
+
+---
+
+## 🏗 Tech Stack
+
+- **Backend**: Java 17, Spring Boot 3
+- **Frontend**: Thymeleaf, HTML, CSS, JavaScript
+- **Database**: MongoDB (Spring Data MongoDB)
+- **Build Tool**: Maven
+
+---
+
+## ⚙️ Setup & Installation
+
+### 1️⃣ Clone the repository
+```bash
+git clone https://github.com/your-username/lifestream.git
+cd lifestream
+```
+2️⃣ Configure MongoDB
+Ensure MongoDB is running locally (default: mongodb://localhost:27017).
+ 
+Update src/main/resources/application.yml if needed:
+
+
+
+```bash
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/lifestream
+  thymeleaf:
+    cache: false
+
+server:
+  port: 8080
+```
+3️⃣ Build & Run
+
+```bash
+mvn clean install
+mvn spring-boot:run
+```
+4️⃣ Access the App
+🌐 Home/Login → http://localhost:8080
+
+👤 Donor / Recipient → register & login from homepage
+
+🛡️ Admin Dashboard → login with admin / admin123
+
+📂 Project Structure
+```bash
+src/main/java/com/lifestream
+│
+├── controller/        # Web + REST controllers
+├── dto/               # Request/response DTOs
+├── model/             # MongoDB models
+├── repository/        # Spring Data repositories
+└── service/           # Business logic services
+```
+
+
+🧪 Usage Workflow
+Donor registers → blood type automatically added to inventory
+
+Donor can schedule donation appointments
+
+Recipient requests blood → reduces stock in inventory
+
+Admin logs in (admin/admin123) → views & manages all appointments and inventory
+
+📌 Future Roadmap
+🔑 Replace hardcoded admin with secure authentication (JWT/OAuth2)
+
+📩 Email/SMS notifications for appointments
+
+📍 Location-based blood bank search
+
+📊 Advanced analytics dashboard
+
+
+
+### 👨‍💻 Author
+Developed by Palak Beri ✨
+Feel free to ⭐ this repo if you find it useful!
